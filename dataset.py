@@ -14,13 +14,17 @@ from nltk.tokenize import word_tokenize
 
 from collections import defaultdict, Counter
 
+from utils import parse_arguments, read_settings
 import nltk
 from nltk.corpus import stopwords
 
 from logger import Logger
 
+from torch.utils.data import random_split, DataLoader, Dataset
+
 import spacy
 import pickle
+
 
 device  = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
 
@@ -40,13 +44,14 @@ nlp_en.max_length = 10_000_000  # Adjust based on your text size
 
 
 class TranslationDataset:
-    MAX_LENGTH =25 # Maximum length of the sentence
+    MAX_LENGTH =50 # Maximum length of the sentence
     
     
 
-    def __init__(self, file_en, file_sv, stopword_remove=True, punctuation_remove=True, use_lower=True, rebuild_vocabulary=True,min_freq=2,max_vocab_size=10000):
+    def __init__(self, file_en, file_sv, stopword_remove=True, punctuation_remove=True, use_lower=True, rebuild_vocabulary=True,min_freq=2,max_vocab_size=10000,num_lines=1000):
         self.file_en = file_en
         self.file_sv = file_sv
+        self.num_lines = num_lines
         self.stop_words_en = set(stopwords.words('english'))
         self.stop_words_sv = set(stopwords.words('swedish'))
         self.vocabulary = {}
@@ -91,16 +96,21 @@ class TranslationDataset:
                         loaded_dict = pickle.load(file)
                         if isinstance(loaded_dict, dict):
                             setattr(self, f'word2idx_{lang}', loaded_dict)
+                            setattr(self, f'vocabulary_{lang}', list(loaded_dict.keys()))  # Set vocabulary based on loaded word2idx
+
+                            # Create idx2word dictionary by reversing word2idx
+                            idx2word = {idx: word for word, idx in loaded_dict.items()}     #Another way to have idx2word 
+                            setattr(self, f'idx2word_{lang}', idx2word)                     #Double check it !!
                         else:
                             print(f"Error: Expected a dictionary in {path_vocab}, but got a {type(loaded_dict)}")
     def __len__(self):
         return len(self.data)
 
-    def open_data(self,n = 40000): # Reading the first n lines of the data 
+    def open_data(self): # Reading the first n lines of the data 
         with open(self.file_sv, 'r', encoding='utf-8') as f:
-            sv = [next(f) for _ in range(n)]
+            sv = [next(f) for _ in range(self.num_lines)]
         with open(self.file_en, 'r', encoding='utf-8') as f:
-            en = [next(f) for _ in range(n)]
+            en = [next(f) for _ in range(self.num_lines)]
 
         return sv, en
 
@@ -108,7 +118,7 @@ class TranslationDataset:
         sv, en = self.open_data()
         
         print('Now Tokenizing Swedish')
-        self.tokens_sv = [token.text for sentence in sv for token in nlp_sv(sentence[:nlp_sv.max_length])] # Tokenize it based on the max length of the model
+        self.tokens_sv = [token.text for sentence in sv for token in nlp_sv(sentence[:nlp_sv.max_length]) if token.text.isalpha() ] # Tokenize it based on the max length of the model
         print('Now Tokenizing English')
         self.tokens_en = [token.text for sentence in en for token in nlp_en(sentence[:nlp_en.max_length])]
         return self.tokens_sv, self.tokens_en
@@ -169,79 +179,45 @@ class TranslationDataset:
 
 
     def sentences_to_sequences(self, input_sentence, output_sentence):
-        input_tensor = [self.word2idx_en.get(word, self.word2idx_en['UNK']) for word in input_sentence.split()]
-        output_tensor = [self.word2idx_sv.get(word, self.word2idx_sv['UNK']) for word in output_sentence.split()]
-        
+        input_words = [self.word2idx_en['SOS']] + [self.word2idx_en.get(word, self.word2idx_en['UNK']) for word in input_sentence.split()]
+        output_words = [self.word2idx_sv['SOS']] + [self.word2idx_sv.get(word, self.word2idx_sv['UNK']) for word in output_sentence.split()]
+
+        # Truncate the sequences if they're too long
+        input_words = input_words[:self.MAX_LENGTH-1]
+        output_words = output_words[:self.MAX_LENGTH-1]
+
+        # Add the 'EOS' token at the end
+        input_words.append(self.word2idx_en['EOS'])
+        output_words.append(self.word2idx_sv['EOS'])
+
         # Pad the sequences to have a fixed length
-        input_tensor += [self.word2idx_en['PAD']] * (self.MAX_LENGTH - len(input_tensor))
-        output_tensor += [self.word2idx_sv['PAD']] * (self.MAX_LENGTH - len(output_tensor))
-        # Need some updates
+        input_tensor = input_words + [self.word2idx_en['PAD']] * (self.MAX_LENGTH - len(input_words))
+        output_tensor = output_words + [self.word2idx_sv['PAD']] * (self.MAX_LENGTH - len(output_words))
+
         return input_tensor, output_tensor
 
-        
-    
+            
     def __getitem__(self, idx):
         input_sentence, output_sentence = self.data[idx]
         input_tensor, output_tensor = self.sentences_to_sequences(input_sentence, output_sentence)
-        return input_tensor, output_tensor
+        return torch.tensor(input_tensor).view(-1), torch.tensor(output_tensor).view(-1)
   
-            
-
-        
     
-        
-    
-
-
-
-
-
-    
-
-
 
 def main():
 
+    args = parse_arguments()
+
+    # Read the settings from the YAML file
+    settings = read_settings(args.config)
     # Create an instance of TextCleaner
-    dataset = TranslationDataset(file_en='sv-en/europarl-v7.sv-en.en',file_sv='sv-en/europarl-v7.sv-en.sv',rebuild_vocabulary=False, min_freq=2, max_vocab_size=20000)
 
-    input_tensor, output_tensor = dataset[506]
+    dataset = TranslationDataset(**settings['paths'])
 
-    # Print the results
-    print(f"Input tensor: {input_tensor}")
-    print(f"Output tensor: {output_tensor}")
-
-    # Show the shape of the tensors
-    print(f"Input tensor shape: {len(input_tensor)}")
-    print(f"Output tensor shape: {len(output_tensor)}")
-
-
-
-        
-
-    
 
 if __name__ == '__main__':
 
     main()
 
 
-    #wandb_logger = Logger(f"Machine Translation", project='Machine Translation')
-    #logger = wandb_logger.get_logger()
-    #cleaner = TextCleaner(file_en='sv-en/europarl-v7.sv-en.en',file_sv='sv-en/europarl-v7.sv-en.sv',rebuild_vocabulary=True, min_freq=10, max_vocab_size=10000)
-    
-    
-    #Print Word2Count for both languages as 5 most common words
-    #print(cleaner.word2count['en'].most_common(5))
-    #print(cleaner.word2count['sv'].most_common(5))
-
-
-    #Print the vocabulary for both languages as 10 words
-    #print(cleaner.vocabulary['en'][:5])
-    #print(cleaner.vocabulary['sv'][:5])
-
-    
-
    
-
-
