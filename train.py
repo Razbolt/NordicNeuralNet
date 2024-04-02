@@ -91,6 +91,9 @@ if __name__ == '__main__':
     settings = read_settings(args.config)
     # Create an instance of TextCleaner
 
+    wandb_logger = Logger(f'NMT_BaseModel_Seq2Seq',project='Machine Translation')
+    logger = wandb_logger.get_logger()
+
     dataset = TranslationDataset(**settings['paths'])
 
     print(f'Vocabulary length of English dataset', len(dataset.vocabulary_en))
@@ -101,6 +104,7 @@ if __name__ == '__main__':
    
    
     total_size= len(dataset)
+    print(f'Total size of the dataset is {total_size}')
     train_size = int(0.8 * total_size)
     val_size =  int(0.1 * total_size)
     test_size = total_size - train_size - val_size
@@ -117,8 +121,7 @@ if __name__ == '__main__':
     model = Seq2Seq(encoder, decoder)
 
     #Initialize the logger with the model settings as project of Machine Translation
-    wandb_logger = Logger(f'NMT_BaseModel_Seq2Seq',project='Machine Translation')
-    logger = wandb_logger.get_logger()
+
 
     train_model(model, train_loader, val_loader, settings['model_settings'])
     

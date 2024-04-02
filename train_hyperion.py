@@ -78,6 +78,13 @@ def train_model(model, train_loader, val_loader, model_settings):
                 })
 
         print(f"Epoch {epoch + 1}/{model_settings['num_epochs']}, Avg Training Loss: {total_loss / len(train_loader)}, Total Training Loss: {total_loss}, Val Loss: {val_loss}")
+
+    #Save  the model at the end
+    torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
+                'optimizer_state_dict':optimizer.state_dict(),
+                'loss':loss.item()}, 'models/model_seq2seq.pth')
+        
+    print('Finished Training and saved the model')
     
 
 def main():

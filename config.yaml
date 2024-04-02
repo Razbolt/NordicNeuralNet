@@ -4,11 +4,11 @@ paths:
   rebuild_vocabulary: True
   min_freq: 3
   max_vocab_size: 35000
-  num_lines: 500000
+  num_lines: 5000
 
 
 model_settings:
-  num_epochs: 10
+  num_epochs: 15
   learning_rate: 0.001
 
 batch_size: 64

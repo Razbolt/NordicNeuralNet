@@ -31,22 +31,17 @@ nltk.download('stopwords')
 
 device  = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
 
-#print ('Device set to {0}'.format(device))
+print ('Device set to {0}'.format(device))
 
-# Spacy model is used to tokenize the data
-#nlp_sv = spacy.load('sv_core_news_sm')
-#nlp_en = spacy.load('en_core_web_sm')
+
 
 import spacy.cli
-
-spacy.cli.download("sv_core_news_sm")
-spacy.cli.download("en_core_web_sm")
+#spacy.cli.download("sv_core_news_sm")
+#spacy.cli.download("en_core_web_sm")
 
 nlp_sv = spacy.load('sv_core_news_sm')
 nlp_en = spacy.load('en_core_web_sm')
 
-#Open the data from sv-en and en-sv
-#Return the data in a list of tuples
 
 nlp_sv.max_length = 10_000_000  # Adjust based on your text size
 nlp_en.max_length = 10_000_000  # Adjust based on your text size
