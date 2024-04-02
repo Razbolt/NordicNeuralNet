@@ -1,6 +1,11 @@
 import torch
 import torch.nn as nn
 
+'''
+This architecture influenced by the following tutorial: https://www.youtube.com/watch?v=EoGUlvhRYpk&t=663s
+And modified architecture from LSTM to GRU
+The changes applied in seq2seq model others encoder and decoder are straightforward as in all examples
+'''
 class Encoder(nn.Module):
     def __init__(self, input_size, embedding_size, hidden_size, num_layers, dropout):
         super(Encoder, self).__init__()
@@ -12,18 +17,18 @@ class Encoder(nn.Module):
         self.dropout = nn.Dropout(dropout)
         
     def forward(self, x):
-        print('----Encoder----')
+        #print('----Encoder----')
         #Shape of x: (batch_size, seq_length)
-        print(f' Before starting shape:',x.shape)
+        #print(f' Before starting shape:',x.shape)
         embedded = self.dropout(self.embedding(x))
         #Shape of embedded: (batch_size, seq_length, embedding_size)
-        print(f'Embedding shape:',embedded.shape)
+        #print(f'Embedding shape:',embedded.shape)
 
         output, hidden = self.rnn(embedded)
         #Shape of output: (batch_size, seq_length, hidden_size)
-        print(f'Output layer shape:',output.shape)
+        #print(f'Output layer shape:',output.shape)
         #Shape of hidden: (num_layers, batch_size, hidden_size)
-        print(f'Hidden layer shape:',hidden.shape)
+        #print(f'Hidden layer shape:',hidden.shape)
         return  output,hidden
 
 
@@ -40,20 +45,25 @@ class Decoder(nn.Module):
         self.fc = nn.Linear(hidden_size, output_size)
         
     def forward(self, x, hidden):
-        print('----Decoder----')
-        print(f' Before starting shape:',x.shape)
+        #print('----Decoder----')
+        #print(f' Before starting shape:',x.shape)
         #Shape of x: (batch_size)
 
-        x = x.unsqueeze(1)
+        x = x.unsqueeze(1) 
         #Shape of x: (batch_size, 1)
-        print(f' After unsqueeze shape:',x.shape)
 
         embedded = self.dropout(self.embedding(x))
+        #Shape of embedded: (batch_size, 1, embedding_size)
 
         output, hidden = self.rnn(embedded, hidden)
+        #Shape of output: (batch_size, 1, hidden_size)
+        #Shape of hidden: (num_layers, batch_size, hidden_size)
+
         output = output.squeeze(1)
-        output = self.fc(output)
-        return output, hidden
+        #Shape of output: (batch_size, hidden_size)
+        predictions = self.fc(output)
+        #Shape of predictions: (batch_size, output_size)
+        return predictions, hidden
 
 
 class Seq2Seq(nn.Module):
@@ -87,9 +97,9 @@ class Seq2Seq(nn.Module):
 
 def main():
     # Generate a random input tensor
-    input_tensor = torch.randint(0, 100, (2, 50))  # 2 is batch size, 50 is sequence length, 100 is vocab size
+    input_tensor = torch.randint(0, 100, (16, 5))  # 16 is batch size, 50 is sequence length, 100 is vocab size
     # Generate a random output tensor
-    output_tensor = torch.randint(0, 100, (2, 50))
+    output_tensor = torch.randint(0, 100, (16, 5)) # 16 is batch size, 50 is sequence length, 100 is vocab size
 
     # Instantiate the encoder
     encoder = Encoder(input_size=100, embedding_size=300, hidden_size=512, num_layers=10, dropout=0.5)

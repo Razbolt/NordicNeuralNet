@@ -3,11 +3,14 @@ paths:
   file_sv: 'sv-en/europarl-v7.sv-en.sv'
   rebuild_vocabulary: True
   min_freq: 3
-  max_vocab_size: 25000
-  num_lines: 50000
+  max_vocab_size: 35000
+  num_lines: 500000
 
 
+model_settings:
+  num_epochs: 10
+  learning_rate: 0.001
 
-batch_size: 128
+batch_size: 64
 
 
