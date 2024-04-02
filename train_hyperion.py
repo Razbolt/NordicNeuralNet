@@ -14,9 +14,11 @@ print('Device set to {0}'.format(device))
 
 def evaluate_model(model, val_loader, criterion):
     model.eval()
+
+    total_val_loss = 0
     with torch.no_grad():
         print('---Evaluation has begun---')
-        total_vall_loss = 0
+        
         for i, (input_tensor, output_tensor) in enumerate(val_loader):
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
@@ -47,7 +49,7 @@ def train_model(model, train_loader, val_loader, model_settings):
         print('---Training has begun---')
         model.train()
         total_loss = 0
-        for i, (input_tensor, output_tensor) in enumerate(train_loader):
+        for i, (input_tensor, output_tensor) in enumerate(train_loader): # i is the batch number
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
 
@@ -73,11 +75,10 @@ def train_model(model, train_loader, val_loader, model_settings):
         val_loss = evaluate_model(model, val_loader, criterion)
         logger.log({
                 'avg_train_loss': total_loss / len(train_loader), 
-                'total_train_loss': total_loss, 
                 'val_loss': val_loss
                 })
 
-        print(f"Epoch {epoch + 1}/{model_settings['num_epochs']}, Avg Training Loss: {total_loss / len(train_loader)}, Total Training Loss: {total_loss}, Val Loss: {val_loss}")
+        print(f"Epoch {epoch + 1}/{model_settings['num_epochs']}, Avg Training Loss: {total_loss / len(train_loader)}, Val Loss: {val_loss}")
 
     #Save  the model at the end
     torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
@@ -108,6 +109,7 @@ if __name__ == '__main__':
    
    
     total_size= len(dataset)
+    print(f'Total size of the dataset is {total_size}')
     train_size = int(0.8 * total_size)
     val_size =  int(0.1 * total_size)
     test_size = total_size - train_size - val_size
@@ -123,8 +125,13 @@ if __name__ == '__main__':
 
     model = Seq2Seq(encoder, decoder)
 
+    #Take learning rate and number of epochs from the model settings
+    num_epochs = settings['model_settings']['num_epochs']
+    learning_rate = settings['model_settings']['learning_rate']
+    batch_size = settings['batch_size']
+
     #Initialize the logger with the model settings as project of Machine Translation
-    wandb_logger = Logger(f'NMT_BaseModel_Seq2Seq',project='Machine Translation')
+    wandb_logger = Logger(f'LocalNMT_BaseModel_Seq2Seq_epochs{num_epochs}_b{batch_size}_lr{learning_rate}',project='Machine Translation')
     logger = wandb_logger.get_logger()
 
     train_model(model, train_loader, val_loader, settings['model_settings'])

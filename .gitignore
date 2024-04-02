@@ -2,3 +2,4 @@ sv-en/
 __pycache__/
 wandb/
 translation/
+models/
