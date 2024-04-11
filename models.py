@@ -6,6 +6,16 @@ This architecture influenced by the following tutorial: https://www.youtube.com/
 And modified architecture from LSTM to GRU
 The changes applied in seq2seq model others encoder and decoder are straightforward as in all examples
 '''
+
+#TODO:
+ #1. Apply attention mechanism to the model
+    #1.2. Implement BLEU score calculation for the model
+
+#2. Apply transformer model to the model
+    #2.1. Implement BLEU score calculation for the model
+
+
+
 class Encoder(nn.Module):
     def __init__(self, input_size, embedding_size, hidden_size, num_layers, dropout):
         super(Encoder, self).__init__()

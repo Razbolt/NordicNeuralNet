@@ -35,7 +35,8 @@ def evaluate_model(model, val_loader, criterion):
         return (total_val_loss / len(val_loader))
     
 
-
+# TODO:
+    #1. Mr.Greg gonna implement valdation loss check and save the model at the end
 def train_model(model, train_loader, val_loader, model_settings):
     #Define the loss function
     criterion = torch.nn.CrossEntropyLoss()
