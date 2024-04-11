@@ -116,9 +116,15 @@ if __name__ == '__main__':
 
     train, val, test = random_split(dataset, [train_size, val_size, test_size])
 
+    #Save test dataset to a file
+    torch.save(test.indices,'test_data/test_indicies.pt')
+
+    print('Test data saved to test_data/test_indicies.pt')
+
     train_loader = DataLoader(train, settings['batch_size'], shuffle=True)
     val_loader = DataLoader(val, settings['batch_size'], shuffle=True)
-    test_loader = DataLoader(test, settings['batch_size'], shuffle=True)
+    
+    
 
     encoder = Encoder(len(dataset.vocabulary_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
     decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
