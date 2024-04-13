@@ -1,3 +1,4 @@
+# main.py
 
 import torch
 from nltk import ngrams as ngrams
@@ -9,14 +10,14 @@ from torch.utils.data import random_split, DataLoader, Dataset
 from models import Encoder, Decoder, Seq2Seq
 
 device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
-print('Device set to {0}'.format(device))
+#print('Device set to {0}'.format(device))
 
 
 def evaluate_model(model, val_loader, criterion):
     model.eval()
     with torch.no_grad():
         print('---Evaluation has begun---')
-        total_vall_loss = 0
+        total_val_loss = 0
         for i, (input_tensor, output_tensor) in enumerate(val_loader):
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
@@ -34,7 +35,7 @@ def evaluate_model(model, val_loader, criterion):
     
 
 
-def train_model(model, train_loader, val_loader, model_settings):
+def train_model(model, train_loader, val_loader, model_settings, my_logger):
     #Define the loss function
     criterion = torch.nn.CrossEntropyLoss()
 
@@ -71,7 +72,7 @@ def train_model(model, train_loader, val_loader, model_settings):
             print(f'Epoch {epoch+1}, Batch {i}, Loss {loss.item()}')
 
         val_loss = evaluate_model(model, val_loader, criterion)
-        logger.log({
+        my_logger.log({
                 'avg_train_loss': total_loss / len(train_loader), 
                 'total_train_loss': total_loss, 
                 'val_loss': val_loss
@@ -81,18 +82,23 @@ def train_model(model, train_loader, val_loader, model_settings):
     
 
 def main():
-
-    return
-
-if __name__ == '__main__':
     args = parse_arguments()
 
     # Read the settings from the YAML file
     settings = read_settings(args.config)
-    # Create an instance of TextCleaner
 
-    wandb_logger = Logger(f'NMT_BaseModel_Seq2Seq',project='Machine Translation')
-    logger = wandb_logger.get_logger()
+    config = settings['model_settings']
+   
+    # Initialize logger
+    logger_settings = settings['logger']
+    experiment_name = logger_settings['experiment_name']
+    project = logger_settings['project']
+    entity = logger_settings['entity']
+    
+
+    my_logger = Logger(experiment_name, project, entity)
+    my_logger.login()
+    my_logger.start(settings)
 
     dataset = TranslationDataset(**settings['paths'])
 
@@ -100,8 +106,6 @@ if __name__ == '__main__':
     #print(len(dataset.word2idx_en))
     print(f'Vocabulary length of Swedish',len(dataset.word2idx_sv))
     #print( len(dataset.vocabulary_sv))
-
-   
    
     total_size= len(dataset)
     print(f'Total size of the dataset is {total_size}')
@@ -111,9 +115,9 @@ if __name__ == '__main__':
 
     train, val, test = random_split(dataset, [train_size, val_size, test_size])
 
-    train_loader = DataLoader(train, settings['batch_size'], shuffle=True)
-    val_loader = DataLoader(val, settings['batch_size'], shuffle=True)
-    test_loader = DataLoader(test, settings['batch_size'], shuffle=True)
+    train_loader = DataLoader(train, config['batch_size'], shuffle=True)
+    val_loader = DataLoader(val, config['batch_size'], shuffle=True)
+    test_loader = DataLoader(test, config['batch_size'], shuffle=True)
 
     encoder = Encoder(len(dataset.vocabulary_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
     decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
@@ -123,7 +127,7 @@ if __name__ == '__main__':
     #Initialize the logger with the model settings as project of Machine Translation
 
 
-    train_model(model, train_loader, val_loader, settings['model_settings'])
-    
+    train_model(model, train_loader, val_loader, settings['model_settings'], my_logger)
 
-    #main()
+if __name__ == '__main__':
+    main()
