@@ -30,12 +30,8 @@ import pickle
 import nltk
 nltk.download('stopwords')
 
-
 device  = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
-
 print ('Device set to {0}'.format(device))
-
-
 
 import spacy.cli
 #spacy.cli.download("sv_core_news_sm")
@@ -44,17 +40,12 @@ import spacy.cli
 nlp_sv = spacy.load('sv_core_news_sm')
 nlp_en = spacy.load('en_core_web_sm')
 
-
 nlp_sv.max_length = 10_000_000  # Adjust based on your text size
 nlp_en.max_length = 10_000_000  # Adjust based on your text size
 
-
-
-
 class TranslationDataset:
     MAX_LENGTH =50 # Maximum length of the sentence
-    
-    
+       
 
     def __init__(self, file_en, file_sv, stopword_remove=True, punctuation_remove=True, use_lower=True, rebuild_vocabulary=True,min_freq=2,max_vocab_size=10000,num_lines=1000):
         self.file_en = file_en
@@ -69,11 +60,10 @@ class TranslationDataset:
 
 
         self.word2_idx = {}
-        selfindex2word = {}
+        self.index2word = {}
 
         sv,en = self.open_data()
         self.data = list(zip(en,sv))
-
 
         # Example
         self.index2word_en = {0: "PAD", 1: "SOS", 2: "EOS", 3: "UNK"}

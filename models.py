@@ -24,9 +24,10 @@ class Encoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
+        self.dropout = nn.Dropout(dropout)
         self.embedding = nn.Embedding(input_size, embedding_size)
         self.rnn = nn.GRU(embedding_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
-        self.dropout = nn.Dropout(dropout)
+        
         
     def forward(self, x):
         #print('----Encoder----')
@@ -37,6 +38,8 @@ class Encoder(nn.Module):
         #print(f'Embedding shape:',embedded.shape)
 
         output, hidden = self.rnn(embedded)
+        # output, (hidden, cell) = self.rnn(embedded)   ???
+
         #Shape of output: (batch_size, seq_length, hidden_size)
         #print(f'Output layer shape:',output.shape)
         #Shape of hidden: (num_layers, batch_size, hidden_size)
@@ -50,10 +53,9 @@ class Decoder(nn.Module):
         self.hidden_size = hidden_size
         self.num_layers = num_layers
         
-        
+        self.dropout = nn.Dropout(dropout)
         self.embedding = nn.Embedding(output_size, embedding_size)
         self.rnn = nn.GRU(embedding_size, hidden_size, num_layers, dropout=dropout, batch_first=True)
-        self.dropout = nn.Dropout(dropout)
         self.fc = nn.Linear(hidden_size, output_size)
         
     def forward(self, x, hidden):
@@ -85,26 +87,29 @@ class Seq2Seq(nn.Module):
         self.decoder = decoder
         
     def forward(self, source, target, teacher_forcing_ratio=0.5):
+        print(f"Source shape: {source.shape}, Target shape: {target.shape}")
         batch_size = source.shape[0]
         target_len = target.shape[1]
         target_vocab_size = self.decoder.fc.out_features
+        print(f"Target Vocabulary Size: {target_vocab_size}")
         
         outputs = torch.zeros(batch_size, target_len, target_vocab_size).to(source.device)
-        
         encoder_output, hidden = self.encoder(source)
+        print(f"Encoder output shape: {encoder_output.shape}, Hidden state shape: {hidden.shape}")
         
         decoder_input = target[:, 0]
-        
+        print(f"Initial decoder input shape: {decoder_input.shape}, Device: {decoder_input.device}")
+
         for t in range(1, target_len):
             decoder_output, hidden = self.decoder(decoder_input, hidden)
+            #print(f"Decoder output at time {t} shape: {decoder_output.shape}")
             outputs[:, t] = decoder_output
             teacher_force = torch.rand(1) < teacher_forcing_ratio
             top1 = decoder_output.argmax(1)
             decoder_input = target[:, t] if teacher_force else top1
+            #print(f"Next decoder input shape: {decoder_input.shape}")
         
         return outputs
-
-
 
 
 def main():
@@ -114,10 +119,10 @@ def main():
     output_tensor = torch.randint(0, 100, (16, 5)) # 16 is batch size, 50 is sequence length, 100 is vocab size
 
     # Instantiate the encoder
-    encoder = Encoder(input_size=100, embedding_size=300, hidden_size=512, num_layers=10, dropout=0.5)
+    encoder = Encoder(input_size=5000, embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
 
     # Instantiate the decoder
-    decoder = Decoder(output_size=100, embedding_size=300, hidden_size=512, num_layers=10, dropout=0.5)
+    decoder = Decoder(output_size=5000, embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
 
     # Instantiate the seq2seq model
     model = Seq2Seq(encoder, decoder)

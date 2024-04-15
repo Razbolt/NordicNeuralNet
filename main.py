@@ -6,80 +6,98 @@ from utils import parse_arguments, read_settings
 from dataset import TranslationDataset
 from logger import Logger
 from torch.utils.data import random_split, DataLoader, Dataset
-
 from models import Encoder, Decoder, Seq2Seq
+from utils import calculate_bleu_score
 
 device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
-#print('Device set to {0}'.format(device))
+#print(f"Using device: {device}")
 
 
-def evaluate_model(model, val_loader, criterion):
+def evaluate_model(model, val_loader, criterion, device, dataset):
     model.eval()
+    total_val_loss = 0
+    references = []
+    hypotheses = []
+
     with torch.no_grad():
-        print('---Evaluation has begun---')
-        total_val_loss = 0
-        for i, (input_tensor, output_tensor) in enumerate(val_loader):
+        print('---Validation---')
+        
+        for input_tensor, target_tensor in val_loader:
             input_tensor = input_tensor.to(device)
-            output_tensor = output_tensor.to(device)
+            target_tensor = target_tensor.to(device)
 
-            output = model(input_tensor, output_tensor)
-
+            output = model(input_tensor, target_tensor)
             output = output.view(-1, output.shape[2])
-            output_tensor = output_tensor.view(-1)
+            target_tensor = target_tensor.view(-1)
 
-            val_loss = criterion(output, output_tensor)
-
+            val_loss = criterion(output, target_tensor)
             total_val_loss += val_loss.item()
 
-        return (total_val_loss / len(val_loader))
+            predicted_indices = output.argmax(1).cpu().tolist()
+            predicted_words = [dataset.index2word_sv.get(idx, '<UNK>') for idx in predicted_indices]
+            target_words_list = target_tensor.cpu().tolist()
+            target_words = [[dataset.index2word_en.get(idx, '<UNK>') for idx in target_words_list]]
+
+            hypotheses.append(predicted_words)
+            references.append(target_words)
+
+        # Debugging output
+            #if '<UNK>' in predicted_words or '<UNK>' in target_words[0]:
+            #    print("Unknown index in predictions or targets:", predicted_indices, target_words_list)
+
+
+    avg_val_loss = total_val_loss / len(val_loader)
+    return avg_val_loss, references, hypotheses     
     
 
 
-def train_model(model, train_loader, val_loader, model_settings, my_logger):
+def train_model(model, train_loader, val_loader, model_settings, my_logger, dataset):
+    # Ensure model is on the right device
+    model = model.to(device)
     #Define the loss function
     criterion = torch.nn.CrossEntropyLoss()
 
     #Define the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=model_settings['learning_rate'])
 
-    model = model.to(device)
-
     for epoch in range(model_settings['num_epochs']):
-        print('---Training has begun---')
+        print('---Training loop---')
         model.train()
         total_loss = 0
-        for i, (input_tensor, output_tensor) in enumerate(train_loader):
+        for input_tensor, output_tensor in train_loader:
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
 
+            #Debugging to try and find the error
+            print("Input tensor shape:", input_tensor.shape)
+            print("Output tensor shape:", output_tensor.shape)
+            print("Input device:", input_tensor.device)
+            print("Output device:", output_tensor.device)
+            print("Model device:", next(model.parameters()).device)
+
             optimizer.zero_grad()
-
             output = model(input_tensor, output_tensor)
-
-            output = output.view(-1, output.shape[2])
-            output_tensor = output_tensor.view(-1)
-
-            loss = criterion(output, output_tensor)
-            total_loss += loss.item() #Include the loss in total loss before backpropagation
-
+            print(f"Model output shape: {output.shape}")
+            output_reshaped = output.view(-1, output.shape[-1])
+            target_reshaped = output_tensor.view(-1)
+            print(f"Output reshaped shape: {output_reshaped.shape}, Target reshaped shape: {target_reshaped.shape}")
+            loss = criterion(output_reshaped, target_reshaped)
             loss.backward()
-
             optimizer.step()
-
+            total_loss += loss.item()            
             
-            
-            #Print the loss in given batch size
-            print(f'Epoch {epoch+1}, Batch {i}, Loss {loss.item()}')
+        avg_train_loss = total_loss / len(train_loader)
+        val_loss, references, hypotheses = evaluate_model(model, val_loader, criterion, device, dataset)
+        bleu_score = calculate_bleu_score(references, hypotheses)
 
-        val_loss = evaluate_model(model, val_loader, criterion)
+        # Logging
         my_logger.log({
-                'avg_train_loss': total_loss / len(train_loader), 
-                'total_train_loss': total_loss, 
-                'val_loss': val_loss
-                })
-
-        print(f"Epoch {epoch + 1}/{model_settings['num_epochs']}, Avg Training Loss: {total_loss / len(train_loader)}, Total Training Loss: {total_loss}, Val Loss: {val_loss}")
-    
+            'epoch': epoch,
+            'train_loss': avg_train_loss,
+            'val_loss': val_loss,
+            'bleu_score': bleu_score
+        })
+        print(f"Epoch {epoch}: Train Loss: {avg_train_loss}, Val Loss: {val_loss}, BLEU Score: {bleu_score}")
 
 def main():
     args = parse_arguments()
@@ -97,7 +115,7 @@ def main():
     
 
     my_logger = Logger(experiment_name, project, entity)
-    my_logger.login()
+    #my_logger.login()
     my_logger.start(settings)
 
     dataset = TranslationDataset(**settings['paths'])
@@ -119,15 +137,15 @@ def main():
     val_loader = DataLoader(val, config['batch_size'], shuffle=True)
     test_loader = DataLoader(test, config['batch_size'], shuffle=True)
 
-    encoder = Encoder(len(dataset.vocabulary_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
-    decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
+    encoder = Encoder(len(dataset.vocabulary_en), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
+    decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
 
     model = Seq2Seq(encoder, decoder)
 
     #Initialize the logger with the model settings as project of Machine Translation
 
 
-    train_model(model, train_loader, val_loader, settings['model_settings'], my_logger)
+    train_model(model, train_loader, val_loader, settings['model_settings'], my_logger, dataset)
 
 if __name__ == '__main__':
     main()
