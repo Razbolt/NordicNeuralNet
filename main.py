@@ -3,7 +3,8 @@
 import torch
 from nltk import ngrams as ngrams
 from utils import parse_arguments, read_settings
-from dataset import TranslationDataset
+from dataset_novoc import TranslationDataset
+#from dataset import TranslationDataset
 from logger import Logger
 from torch.utils.data import random_split, DataLoader, Dataset
 from models import Encoder, Decoder, Seq2Seq
@@ -69,18 +70,18 @@ def train_model(model, train_loader, val_loader, model_settings, my_logger, data
             output_tensor = output_tensor.to(device)
 
             #Debugging to try and find the error
-            print("Input tensor shape:", input_tensor.shape)
-            print("Output tensor shape:", output_tensor.shape)
-            print("Input device:", input_tensor.device)
-            print("Output device:", output_tensor.device)
-            print("Model device:", next(model.parameters()).device)
+            #print("Input tensor shape:", input_tensor.shape)
+            #print("Output tensor shape:", output_tensor.shape)
+            #print("Input device:", input_tensor.device)
+            #print("Output device:", output_tensor.device)
+            #print("Model device:", next(model.parameters()).device)
 
             optimizer.zero_grad()
             output = model(input_tensor, output_tensor)
-            print(f"Model output shape: {output.shape}")
+            #print(f"Model output shape: {output.shape}")
             output_reshaped = output.view(-1, output.shape[-1])
             target_reshaped = output_tensor.view(-1)
-            print(f"Output reshaped shape: {output_reshaped.shape}, Target reshaped shape: {target_reshaped.shape}")
+            #print(f"Output reshaped shape: {output_reshaped.shape}, Target reshaped shape: {target_reshaped.shape}")
             loss = criterion(output_reshaped, target_reshaped)
             loss.backward()
             optimizer.step()
@@ -120,13 +121,13 @@ def main():
 
     dataset = TranslationDataset(**settings['paths'])
 
-    print(f'Vocabulary length of English dataset', len(dataset.vocabulary_en))
-    #print(len(dataset.word2idx_en))
+    #print(f'Vocabulary length of English dataset', len(dataset.vocabulary_en))
+    print(f'Vocabulary length for English', len(dataset.word2idx_en))
     print(f'Vocabulary length of Swedish',len(dataset.word2idx_sv))
-    #print( len(dataset.vocabulary_sv))
+    #print(len(dataset.vocabulary_sv))
    
     total_size= len(dataset)
-    print(f'Total size of the dataset is {total_size}')
+    print(f'Total size of the dataset used is {total_size}')
     train_size = int(0.8 * total_size)
     val_size =  int(0.1 * total_size)
     test_size = total_size - train_size - val_size
@@ -137,8 +138,8 @@ def main():
     val_loader = DataLoader(val, config['batch_size'], shuffle=True)
     test_loader = DataLoader(test, config['batch_size'], shuffle=True)
 
-    encoder = Encoder(len(dataset.vocabulary_en), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
-    decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
+    encoder = Encoder(len(dataset.word2idx_en), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
+    decoder = Decoder(len(dataset.word2idx_sv), embedding_size=300, hidden_size=1024, num_layers=5, dropout=0.5)
 
     model = Seq2Seq(encoder, decoder)
 

@@ -3,3 +3,4 @@ __pycache__/
 wandb/
 translation/
 models/
+oldcode/

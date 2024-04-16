@@ -87,18 +87,18 @@ class Seq2Seq(nn.Module):
         self.decoder = decoder
         
     def forward(self, source, target, teacher_forcing_ratio=0.5):
-        print(f"Source shape: {source.shape}, Target shape: {target.shape}")
+        #print(f"Source shape: {source.shape}, Target shape: {target.shape}")
         batch_size = source.shape[0]
         target_len = target.shape[1]
         target_vocab_size = self.decoder.fc.out_features
-        print(f"Target Vocabulary Size: {target_vocab_size}")
+        #print(f"Target Vocabulary Size: {target_vocab_size}")
         
         outputs = torch.zeros(batch_size, target_len, target_vocab_size).to(source.device)
         encoder_output, hidden = self.encoder(source)
-        print(f"Encoder output shape: {encoder_output.shape}, Hidden state shape: {hidden.shape}")
+        #print(f"Encoder output shape: {encoder_output.shape}, Hidden state shape: {hidden.shape}")
         
         decoder_input = target[:, 0]
-        print(f"Initial decoder input shape: {decoder_input.shape}, Device: {decoder_input.device}")
+        #print(f"Initial decoder input shape: {decoder_input.shape}, Device: {decoder_input.device}")
 
         for t in range(1, target_len):
             decoder_output, hidden = self.decoder(decoder_input, hidden)

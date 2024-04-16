@@ -3,10 +3,6 @@
 paths:
   file_en: 'sv-en/europarl-v7.sv-en.en'
   file_sv: 'sv-en/europarl-v7.sv-en.sv'
-  rebuild_vocabulary: False
-  min_freq: 2
-  max_vocab_size: 10000
-  num_lines: 15000
 
 logger:
   experiment_name: 'English_To_Swedish'
@@ -14,8 +10,8 @@ logger:
   entity: 'vitsiozo'
 
 model_settings:
-  num_epochs: 5
+  num_epochs: 2
   learning_rate: 0.001
-  batch_size: 64
+  batch_size: 256
 
 

@@ -13,21 +13,14 @@ from nltk import ngrams as ngrams
 import pickle
 import time
 from nltk.tokenize import word_tokenize
-
 from collections import defaultdict, Counter
-
 from utils import parse_arguments, read_settings
-import nltk
 from nltk.corpus import stopwords
-
 from logger import Logger
-
 from torch.utils.data import random_split, DataLoader, Dataset
-
 import spacy
-import pickle
 
-import nltk
+
 nltk.download('stopwords')
 
 device  = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
@@ -146,7 +139,7 @@ class TranslationDataset:
        
         self.vocabulary = {'en': list(self.vocabulary_en), 'sv': list(self.vocabulary_sv)} ##Check this !!
         print('Vocabulary built for both languages')
-        #print(self.vocabulary['en'])
+        print(self.vocabulary['en'])
         self.create_mapping()
 
 
@@ -156,8 +149,8 @@ class TranslationDataset:
             self.index2word_en[self.n_words_en] = word
             self.n_words_en += 1
 
-        #print('Mapping finished for English here is the mapping for the first 10 words')
-        #print(self.word2idx_en)
+        print('Mapping finished for English here is the mapping for the first 10 words')
+        print(self.word2idx_en)
         
 
         for word in self.vocabulary['sv']:
@@ -165,15 +158,15 @@ class TranslationDataset:
             self.index2word_sv[self.n_words_sv] = word
             self.n_words_sv += 1
 
-        #print('Mapping finished for Swedish here is the mapping for the first 10 words')
-        #print(self.word2idx_sv)
+        print('Mapping finished for Swedish here is the mapping for the first 10 words')
+        print(self.word2idx_sv)
 
         self.word2_idx = {'en': self.word2idx_en, 'sv': self.word2idx_sv}
         self.index2word = {'en': self.index2word_en, 'sv': self.index2word_sv}
 
-        #print('Mapping finished for both languages')
-        #print(self.word2_idx['en'])
-        #print(self.word2_idx['sv'])
+        print('Mapping finished for both languages')
+        print(self.word2_idx['en'])
+        print(self.word2_idx['sv'])
 
 
     def sentences_to_sequences(self, input_sentence, output_sentence):
