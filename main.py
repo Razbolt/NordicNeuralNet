@@ -93,12 +93,12 @@ def train_model(model, train_loader, val_loader, model_settings, my_logger, data
 
         # Logging
         my_logger.log({
-            'epoch': epoch,
+            'epoch': epoch +1,
             'train_loss': avg_train_loss,
             'val_loss': val_loss,
             'bleu_score': bleu_score
         })
-        print(f"Epoch {epoch}: Train Loss: {avg_train_loss}, Val Loss: {val_loss}, BLEU Score: {bleu_score}")
+        print(f"Epoch {epoch +1}: Train Loss: {avg_train_loss}, Val Loss: {val_loss}, BLEU Score: {bleu_score}")
 
 def main():
     args = parse_arguments()
