@@ -3,13 +3,20 @@
 import os
 import torch
 import pickle
+import nltk
+import spacy
+from nltk.tokenize import word_tokenize
 from torch.utils.data import Dataset
 from utils import parse_arguments, read_settings
+
 
 class TranslationDataset(Dataset):
     MAX_LENGTH = 50  # Maximum length of the sentence
 
     def __init__(self, file_en, file_sv, num_lines=1000):
+        self.nlp_en = spacy.load('en_core_web_sm')
+        self.nlp_sv = spacy.load('sv_core_news_sm')
+
         self.file_en = file_en
         self.file_sv = file_sv
         self.num_lines = num_lines
@@ -19,7 +26,7 @@ class TranslationDataset(Dataset):
 
         # Load data
         sv, en = self.open_data()
-        self.data = list(zip(en, sv))
+        self.data = [(self.tokenize(eng, 'en'), self.tokenize(swe, 'sv')) for eng, swe in zip(en, sv)]
 
         # Print the first 10 pairs of the dataset
         print("First 10 sentence pairs:")
@@ -44,15 +51,21 @@ class TranslationDataset(Dataset):
     def open_data(self):
         # Reading the first n lines of the data
         with open(self.file_sv, 'r', encoding='utf-8') as f:
-            sv = [next(f) for _ in range(self.num_lines)]
+            sv = [next(f).strip() for _ in range(self.num_lines)]
         with open(self.file_en, 'r', encoding='utf-8') as f:
-            en = [next(f) for _ in range(self.num_lines)]
+            en = [next(f).strip() for _ in range(self.num_lines)]
         return sv, en
+    
+    def tokenize(self, sentence, language):
+        nlp = self.nlp_en if language == 'en' else self.nlp_sv
+        doc = nlp(sentence.lower())
+        words = [token.text for token in doc if token.is_alpha]
+        return words
 
     def sentences_to_sequences(self, input_sentence, output_sentence):
         # Convert sentences to sequences of indices
-        input_words = [self.word2idx_en.get(word, self.word2idx_en['UNK']) for word in input_sentence.split()]
-        output_words = [self.word2idx_sv.get(word, self.word2idx_sv['UNK']) for word in output_sentence.split()]
+        input_words = [self.word2idx_en.get(word, self.word2idx_en['UNK']) for word in input_sentence]
+        output_words = [self.word2idx_sv.get(word, self.word2idx_sv['UNK']) for word in output_sentence]
         
         # Truncate and add special tokens
         input_words = [self.word2idx_en['SOS']] + input_words[:self.MAX_LENGTH-2] + [self.word2idx_en['EOS']]
