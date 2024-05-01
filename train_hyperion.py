@@ -49,24 +49,17 @@ def train_model(model, train_loader, val_loader, model_settings):
         model.train()
         total_loss = 0
         for i, (input_tensor, output_tensor) in enumerate(train_loader): # i is the batch number
+
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
-
             optimizer.zero_grad()
-
             output = model(input_tensor, output_tensor)
-
             output = output.view(-1, output.shape[2])
             output_tensor = output_tensor.view(-1)
-
             loss = criterion(output, output_tensor)
             total_loss += loss.item() #Include the loss in total loss before backpropagation
-
             loss.backward()
-
             optimizer.step()
-
-            
             
             #Print the loss in given batch size
             print(f'Epoch {epoch+1}, Batch {i}, Loss {loss.item()}')
@@ -82,7 +75,7 @@ def train_model(model, train_loader, val_loader, model_settings):
     #Save  the model at the end
     torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
                 'optimizer_state_dict':optimizer.state_dict(),
-                'loss':loss.item()}, 'models/model_seq2seq.pth')
+                'loss':loss.item()}, 'models/model_seq2seq_2.pth')
         
     print('Finished Training and saved the model')
     
