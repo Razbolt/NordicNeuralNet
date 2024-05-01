@@ -2,8 +2,8 @@
 import torch
 from nltk import ngrams as ngrams
 from utils import parse_arguments, read_settings
-from dataset import TranslationDataset
-from logger import Logger
+from dataset_novoc import TranslationDataset
+from logger import Logger, Logger2                              #Logger 2 imported from other projects to logg everything into wandb
 from torch.utils.data import random_split, DataLoader, Dataset
 
 from models import Encoder, Decoder, Seq2Seq
@@ -35,8 +35,6 @@ def evaluate_model(model, val_loader, criterion):
         return (total_val_loss / len(val_loader))
     
 
-# TODO:
-    #1. Mr.Greg gonna implement valdation loss check and save the model at the end
 def train_model(model, train_loader, val_loader, model_settings):
     #Define the loss function
     criterion = torch.nn.CrossEntropyLoss()
@@ -102,9 +100,9 @@ if __name__ == '__main__':
 
     dataset = TranslationDataset(**settings['paths'])
 
-    print(f'Vocabulary length of English dataset', len(dataset.vocabulary_en))
+    print(f'Vocabulary length of English dataset', len(dataset.word2idx_en))
     #print(len(dataset.word2idx_en))
-    print(f'Vocabulary length of Swedish',len(dataset.word2idx_sv))
+    print(f'Vocabulary length of Swedish dataset',len(dataset.word2idx_sv))
     #print( len(dataset.vocabulary_sv))
 
    
@@ -118,27 +116,27 @@ if __name__ == '__main__':
     train, val, test = random_split(dataset, [train_size, val_size, test_size])
 
     #Save test dataset to a file
-    torch.save(test.indices,'test_data/test_indicies.pt')
+    torch.save(test,'test_data/test.pt')
 
-    print('Test data saved to test_data/test_indicies.pt')
+    print('Test data saved to test_data/test.pt')
 
-    train_loader = DataLoader(train, settings['batch_size'], shuffle=True)
-    val_loader = DataLoader(val, settings['batch_size'], shuffle=True)
+    train_loader = DataLoader(train, settings['model_settings']['batch_size'], shuffle=True)
+    val_loader = DataLoader(val, settings['model_settings']['batch_size'], shuffle=True)
     
     
 
-    encoder = Encoder(len(dataset.vocabulary_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
-    decoder = Decoder(len(dataset.vocabulary_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
+    encoder = Encoder(len(dataset.word2idx_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
+    decoder = Decoder(len(dataset.word2idx_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
 
     model = Seq2Seq(encoder, decoder)
 
     #Take learning rate and number of epochs from the model settings
     num_epochs = settings['model_settings']['num_epochs']
     learning_rate = settings['model_settings']['learning_rate']
-    batch_size = settings['batch_size']
+    batch_size = settings['model_settings']['batch_size']
 
     #Initialize the logger with the model settings as project of Machine Translation
-    wandb_logger = Logger(f'LocalNMT_BaseModel_Seq2Seq_epochs{num_epochs}_b{batch_size}_lr{learning_rate}',project='Machine Translation')
+    wandb_logger = Logger2(f'LocalNMT_BaseModel_Seq2Seq_epochs{num_epochs}_b{batch_size}_lr{learning_rate}',project='Machine Translation') # Logger Changed to Logger2
     logger = wandb_logger.get_logger()
 
     train_model(model, train_loader, val_loader, settings['model_settings'])

@@ -13,7 +13,7 @@ from utils import parse_arguments, read_settings
 class TranslationDataset(Dataset):
     MAX_LENGTH = 50  # Maximum length of the sentence
 
-    def __init__(self, file_en, file_sv, num_lines=1000):
+    def __init__(self, file_en, file_sv, num_lines=30000):
         self.nlp_en = spacy.load('en_core_web_sm')
         self.nlp_sv = spacy.load('sv_core_news_sm')
 

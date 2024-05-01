@@ -72,6 +72,8 @@ class Decoder(nn.Module):
         output, hidden = self.rnn(embedded, hidden)
         #Shape of output: (batch_size, 1, hidden_size)
         #Shape of hidden: (num_layers, batch_size, hidden_size)
+        
+        #print(f'Hidden shape:',hidden.shape)
 
         output = output.squeeze(1)
         #Shape of output: (batch_size, hidden_size)
