@@ -3,7 +3,7 @@
 paths:
   file_en: 'sv-en/europarl-v7.sv-en.en'
   file_sv: 'sv-en/europarl-v7.sv-en.sv'
-  num_lines: 1000
+  num_lines: 30000
 
 logger:
   experiment_name: 'English_To_Swedish'
@@ -12,7 +12,7 @@ logger:
 
 model_settings:
   num_epochs: 15
-  learning_rate: 0.001
+  learning_rate: 0.0005
   batch_size: 64
 
 

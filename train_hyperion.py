@@ -12,65 +12,94 @@ device = torch.device('mps' if torch.backends.mps.is_available() else 'cuda')
 print('Device set to {0}'.format(device))
 
 
-def evaluate_model(model, val_loader, criterion):
+def indices_to_sentence(indices, index2word): #Converting indices to sentences 
+    return ' '.join([index2word.get(idx, '<UNK>') for idx in indices if idx not in (0, 1, 2)])  # Ignoring pad, sos, eos
+
+
+def evaluate_model(model, val_loader, criterion,index2word_sv):
     model.eval()
 
     total_val_loss = 0
+    num_examples = 5
+    example_counter = 0
     with torch.no_grad():
         print('---Evaluation has begun---')
         
         for i, (input_tensor, output_tensor) in enumerate(val_loader):
-            input_tensor = input_tensor.to(device)
-            output_tensor = output_tensor.to(device)
+            input_tensor, output_tensor = input_tensor.to(device), output_tensor.to(device)
 
             output = model(input_tensor, output_tensor)
+            #print(output.shape)
 
-            output = output.view(-1, output.shape[2])
-            output_tensor = output_tensor.view(-1)
 
+            _, predicted_indices = torch.max(output, dim=2)  # Correctly targeting the last dimension
+            for j in range(input_tensor.size(0)):
+                if example_counter >= num_examples:
+                    break
+                print_example(predicted_indices[j], output_tensor[j], index2word_sv, example_counter)
+                example_counter += 1
+
+
+            output = output.view(-1, output.shape[2]) # Flatten the output for CrossEntropyLoss
+            output_tensor = output_tensor.view(-1)  #Flatten the  ground truth labels 
             val_loss = criterion(output, output_tensor)
-
             total_val_loss += val_loss.item()
 
-        return (total_val_loss / len(val_loader))
+            if example_counter >= num_examples:
+                break
+
+
+        avg_val_loss = total_val_loss / len(val_loader)
+        print(f"---Evaluation completed. Average Validation Loss: {avg_val_loss}---")
+        return avg_val_loss
     
+def print_example(predicted_indices, actual_indices, index2word_sv, example_counter):
+    predicted_sentence = indices_to_sentence(predicted_indices.cpu().numpy(), index2word_sv)
+    actual_sentence = indices_to_sentence(actual_indices.cpu().numpy(), index2word_sv)
+    print(f"Example {example_counter + 1}")
+    print("Predicted:", predicted_sentence)
+    print("Actual:", actual_sentence)
 
-def train_model(model, train_loader, val_loader, model_settings):
-    #Define the loss function
-    criterion = torch.nn.CrossEntropyLoss(ignore_index=0 )
+def train_model(model, train_loader, val_loader, model_settings,index2word_sv):
+    index2word_sv = index2word_sv
 
-    #Define the optimizer
-    optimizer = torch.optim.Adam(model.parameters(), lr=model_settings['learning_rate'])
-
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0 ) #Define the loss function
+    optimizer = torch.optim.Adam(model.parameters(), lr=model_settings['learning_rate']) #Define the optimizer
     model = model.to(device)
 
     for epoch in range(model_settings['num_epochs']):
         print('---Training has begun---')
         model.train()
         total_loss = 0
+        print(f'---Epoch {epoch+1} Training Start---')
         for i, (input_tensor, output_tensor) in enumerate(train_loader): # i is the batch number
 
             input_tensor = input_tensor.to(device)
             output_tensor = output_tensor.to(device)
             optimizer.zero_grad()
+
             output = model(input_tensor, output_tensor)
             output = output.view(-1, output.shape[2])
             output_tensor = output_tensor.view(-1)
+
             loss = criterion(output, output_tensor)
             total_loss += loss.item() #Include the loss in total loss before backpropagation
             loss.backward()
             optimizer.step()
-            
-            #Print the loss in given batch size
-            print(f'Epoch {epoch+1}, Batch {i}, Loss {loss.item()}')
 
-        val_loss = evaluate_model(model, val_loader, criterion)
-        logger.log({
-                'avg_train_loss': total_loss / len(train_loader), 
+            print(f'Epoch {epoch+1}, Batch {i}, Loss {loss.item()}') #Print the loss in given batch size
+
+            
+
+        avg_train_loss = total_loss / len(train_loader)
+        val_loss = evaluate_model(model, val_loader, criterion,index2word_sv)
+
+        logger.log({'epoch': epoch + 1,  
+                'avg_train_loss': avg_train_loss, 
                 'val_loss': val_loss
                 })
 
-        print(f"Epoch {epoch + 1}/{model_settings['num_epochs']}, Avg Training Loss: {total_loss / len(train_loader)}, Val Loss: {val_loss}")
+        print(f"Epoch {epoch + 1}/{model_settings['num_epochs']},  Summary: Avg Training Loss: {avg_train_loss}, Val Loss: {val_loss}")
 
     #Save  the model at the end
     torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
@@ -132,7 +161,7 @@ if __name__ == '__main__':
     wandb_logger = Logger2(f'LocalNMT_BaseModel_Seq2Seq_epochs{num_epochs}_b{batch_size}_lr{learning_rate}',project='Machine Translation') # Logger Changed to Logger2
     logger = wandb_logger.get_logger()
 
-    train_model(model, train_loader, val_loader, settings['model_settings'])
+    train_model(model, train_loader, val_loader, settings['model_settings'],index2word_sv=dataset.index2word_sv)
     
 
     #main()
