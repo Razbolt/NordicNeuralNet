@@ -37,7 +37,7 @@ def evaluate_model(model, val_loader, criterion):
 
 def train_model(model, train_loader, val_loader, model_settings):
     #Define the loss function
-    criterion = torch.nn.CrossEntropyLoss()
+    criterion = torch.nn.CrossEntropyLoss(ignore_index=0 )
 
     #Define the optimizer
     optimizer = torch.optim.Adam(model.parameters(), lr=model_settings['learning_rate'])

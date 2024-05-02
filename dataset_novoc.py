@@ -28,10 +28,12 @@ class TranslationDataset(Dataset):
         sv, en = self.open_data()
         self.data = [(self.tokenize(eng, 'en'), self.tokenize(swe, 'sv')) for eng, swe in zip(en, sv)]
 
-        # Print the first 10 pairs of the dataset
-        print("First 10 sentence pairs:")
+        '''
+                print("First 10 sentence pairs:")
         for i, (eng, swe) in enumerate(self.data[:10]):
             print(f"{i+1}: English: {eng} | Swedish: {swe}")
+        '''
+
 
     def load_vocabularies(self):
         self.word2idx_en = self.load_vocabulary('en')
@@ -39,14 +41,37 @@ class TranslationDataset(Dataset):
         self.index2word_en = {idx: word for word, idx in self.word2idx_en.items()}
         self.index2word_sv = {idx: word for word, idx in self.word2idx_sv.items()}
 
+        # Log special tokens for debugging
+        #print("Special tokens in English vocabulary:",  self.word2idx_en['what'] )
+        #print("Special tokens in Swedish vocabulary:",  self.word2idx_sv['<SOS>'])
+
     def load_vocabulary(self, lang):
         vocab_path = f'vocabulary_{lang}.pkl'
         if os.path.exists(vocab_path):
             print(f"Loading {lang} vocabulary from {vocab_path}")
             with open(vocab_path, 'rb') as file:
-                return pickle.load(file)
+                vocab = pickle.load(file)
+                #return pickle.load(file)
         else:
             raise FileNotFoundError(f"No vocabulary file found for {lang}.")
+        
+        # Define special tokens with fixed indices      
+        special_tokens = {
+            '<PAD>': 0,
+            '<SOS>': 1,
+            '<EOS>': 2,
+            '<UNK>': 3
+        }
+
+        # Start adding vocabulary words after the special tokens
+        word2idx = {**special_tokens}
+        start_index = len(special_tokens)
+
+        # Add words to the dictionary with their corresponding index
+        for index, word in enumerate(vocab, start=start_index):
+            word2idx[word] = index
+
+        return word2idx
         
     def open_data(self):
         # Reading the first n lines of the data
@@ -64,16 +89,16 @@ class TranslationDataset(Dataset):
 
     def sentences_to_sequences(self, input_sentence, output_sentence):
         # Convert sentences to sequences of indices
-        input_words = [self.word2idx_en.get(word, self.word2idx_en['UNK']) for word in input_sentence]
-        output_words = [self.word2idx_sv.get(word, self.word2idx_sv['UNK']) for word in output_sentence]
+        input_words = [self.word2idx_en.get(word, self.word2idx_en['<UNK>']) for word in input_sentence]
+        output_words = [self.word2idx_sv.get(word, self.word2idx_sv['<UNK>']) for word in output_sentence]
         
         # Truncate and add special tokens
-        input_words = [self.word2idx_en['SOS']] + input_words[:self.MAX_LENGTH-2] + [self.word2idx_en['EOS']]
-        output_words = [self.word2idx_sv['SOS']] + output_words[:self.MAX_LENGTH-2] + [self.word2idx_sv['EOS']]
+        input_words = [self.word2idx_en['<SOS>']] + input_words[:self.MAX_LENGTH-2] + [self.word2idx_en['<EOS>']]
+        output_words = [self.word2idx_sv['<SOS>']] + output_words[:self.MAX_LENGTH-2] + [self.word2idx_sv['<EOS>']]
         
         # Pad sequences to fixed length
-        input_tensor = input_words + [self.word2idx_en['PAD']] * (self.MAX_LENGTH - len(input_words))
-        output_tensor = output_words + [self.word2idx_sv['PAD']] * (self.MAX_LENGTH - len(output_words))
+        input_tensor = input_words + [self.word2idx_en['<PAD>']] * (self.MAX_LENGTH - len(input_words))
+        output_tensor = output_words + [self.word2idx_sv['<PAD>']] * (self.MAX_LENGTH - len(output_words))
 
         return input_tensor, output_tensor
     
@@ -91,6 +116,9 @@ def main():
     settings = read_settings(args.config)
     # Create an instance of TextCleaner
     dataset = TranslationDataset(**settings['paths'])
+    
+    #Print the 10th sentence pair
+    print(f"10th sentence pair: {dataset[11]}")
 
 if __name__ == '__main__':
 
