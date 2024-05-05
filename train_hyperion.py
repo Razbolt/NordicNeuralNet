@@ -20,7 +20,7 @@ def evaluate_model(model, val_loader, criterion,index2word_sv):
     model.eval()
 
     total_val_loss = 0
-    num_examples = 5
+    num_examples = 10
     example_counter = 0
     with torch.no_grad():
         print('---Evaluation has begun---')
@@ -29,10 +29,8 @@ def evaluate_model(model, val_loader, criterion,index2word_sv):
             input_tensor, output_tensor = input_tensor.to(device), output_tensor.to(device)
 
             output = model(input_tensor, output_tensor)
-            #print(output.shape)
-
-
             _, predicted_indices = torch.max(output, dim=2)  # Correctly targeting the last dimension
+
             for j in range(input_tensor.size(0)):
                 if example_counter >= num_examples:
                     break
@@ -44,9 +42,6 @@ def evaluate_model(model, val_loader, criterion,index2word_sv):
             output_tensor = output_tensor.view(-1)  #Flatten the  ground truth labels 
             val_loss = criterion(output, output_tensor)
             total_val_loss += val_loss.item()
-
-            if example_counter >= num_examples:
-                break
 
 
         avg_val_loss = total_val_loss / len(val_loader)
@@ -104,7 +99,7 @@ def train_model(model, train_loader, val_loader, model_settings,index2word_sv):
     #Save  the model at the end
     torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
                 'optimizer_state_dict':optimizer.state_dict(),
-                'loss':loss.item()}, 'models/model_seq2seq_2.pth')
+                'loss':loss.item()}, 'models/seq2seq_base2.1.pth')
         
     print('Finished Training and saved the model')
     
@@ -135,12 +130,14 @@ if __name__ == '__main__':
     val_size =  int(0.1 * total_size)
     test_size = total_size - train_size - val_size
 
-    train, val, test = random_split(dataset, [train_size, val_size, test_size])
+    gen = torch.Generator()
+    gen.manual_seed(0)
+    train, val, test = random_split(dataset, [train_size, val_size, test_size], generator=gen)
 
     #Save test dataset to a file
-    torch.save(test,'test_data/test.pt')
+    torch.save(test,'test_data/test_2.pt')
 
-    print('Test data saved to test_data/test.pt')
+    print('Test data saved to test_data/test_2.pt')
 
     train_loader = DataLoader(train, settings['model_settings']['batch_size'], shuffle=True)
     val_loader = DataLoader(val, settings['model_settings']['batch_size'], shuffle=True)
