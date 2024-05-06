@@ -7,7 +7,7 @@ import spacy
 from collections import Counter
 from itertools import islice
 
-def build_vocabulary(file_path, language_model, min_freq=2, max_vocab_size=1000, num_lines=10000):
+def build_vocabulary(file_path, language_model, min_freq=2, max_vocab_size=100000, num_lines=1600000):
     nlp = spacy.load(language_model)
     tokens = []
     
@@ -18,7 +18,8 @@ def build_vocabulary(file_path, language_model, min_freq=2, max_vocab_size=1000,
 
         for line in lines:
             doc = nlp(line.strip())
-            tokens.extend([token.text.lower() for token in doc if token.text.isalpha()])
+            tokens.extend([token.text.lower() for token in doc if token.text.isalpha() or token.is_punct])
+
 
     vocabulary = Counter(tokens)
     # Filter by minimum frequency
@@ -56,8 +57,8 @@ def main(file_en, file_sv):
     vocab_en = build_vocabulary(file_en, "en_core_web_sm")
     vocab_sv = build_vocabulary(file_sv, "sv_core_news_sm")
     
-    save_vocabulary(vocab_en, 'vocabulary_en.pkl')
-    save_vocabulary(vocab_sv, 'vocabulary_sv.pkl')
+    save_vocabulary(vocab_en, 'vocabulary_en_2.pkl')
+    save_vocabulary(vocab_sv, 'vocabulary_sv_2.pkl')
 
 if __name__ == '__main__':
     import sys

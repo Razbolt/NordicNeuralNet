@@ -1,4 +1,4 @@
-# dataset_novoc.py
+
 
 import os
 import torch
@@ -65,34 +65,7 @@ class TranslationDataset(Dataset):
 
         else:
             raise FileNotFoundError(f"No vocabulary file found for {lang}.")
-        
-        ''''
-                                # Define special tokens with fixed indices      
-        special_tokens = {
-            '<PAD>': 0,
-            '<SOS>': 1,
-            '<EOS>': 2,
-            '<UNK>': 3
-        }
 
-        # Start adding vocabulary words after the special tokens
-        word2idx = {**special_tokens}
-        start_index = len(special_tokens)
-
-        # Add words to the dictionary with their corresponding index
-        for index, word in enumerate(vocab, start=start_index):
-            if word not in special_tokens:
-                word2idx[word] = index
-
-        return word2idx
-        
-        
-        '''
-
-
-        
-        
-        
         
 
         
@@ -147,8 +120,8 @@ def main():
     sorted_word2idx_en = dict(sorted(dataset.word2idx_en.items(), key=lambda item: item[1]))
 
     # Print the first 10 words of sorted_word2idx_sv and sorted_word2idx_en
-    print(f"First 10 words of sorted_word2idx_sv: {list(sorted_word2idx_sv.items())[-10:]}")
-    print(f"First 10 words of sorted_word2idx_en: {list(sorted_word2idx_en.items())[-10:]}")
+    print(f"First 10 words of sorted_word2idx_sv: {list(sorted_word2idx_sv.items())[:100]}")
+    print(f"First 10 words of sorted_word2idx_en: {list(sorted_word2idx_en.items())[:100]}")
 
 if __name__ == '__main__':
 
