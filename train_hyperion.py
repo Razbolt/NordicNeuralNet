@@ -130,7 +130,7 @@ if __name__ == '__main__':
     val_size =  int(0.1 * total_size)
     test_size = total_size - train_size - val_size
 
-    gen = torch.Generator()
+    gen = torch.Generator() # This is working as random seed
     gen.manual_seed(0)
     train, val, test = random_split(dataset, [train_size, val_size, test_size], generator=gen)
 
