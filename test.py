@@ -16,9 +16,37 @@ with open('vocabulary_en.pkl', 'rb') as file:
 with open('vocabulary_sv.pkl', 'rb') as file:
     vocab_sv = pickle.load(file)
 
+special_tokens = ['<PAD>', '<SOS>', '<EOS>', '<UNK>']
+updated_vocab_en = {}
+updated_vocab_sv = {}
+
+for i, token in enumerate(special_tokens): # Add special tokens to the updated vocabularies
+    updated_vocab_en[token] = i
+    updated_vocab_sv[token] = i
+
+for word, index in vocab_en.items(): # Add the rest of the words to the updated vocabularies
+    updated_vocab_en[word] = index + len(special_tokens)
+
+for word, index in vocab_sv.items():
+    updated_vocab_sv[word] = index + len(special_tokens)
+
+vocab_en = updated_vocab_en # Updating the vocabulary to have same number of tokens as the original
+vocab_sv = updated_vocab_sv 
+
+
+'''
+# Print the indices of the special tokens
+for vocab in [vocab_en, vocab_sv]:
+    for token in special_tokens:
+        print(f"{token}: {vocab[token]}")
+
+'''
+
 #Double check the lengths of each vocabulary 
 print(f"length of vocab_en: {len(vocab_en)}")
 print(f"length of vocab_sv: {len(vocab_sv)}")
+
+
 
 
 
@@ -30,7 +58,7 @@ def build_inverse_vocab(vocab):
 def indices_to_word(indices, vocab):
     return [[vocab[i.item()] for i in sequence] for sequence in indices]
 
-def remove_special_tokens(sentence, special_tokens = ['SOS', 'EOS', 'PAD', 'UNK']):
+def remove_special_tokens(sentence, special_tokens = ['<SOS>', '<EOS>', '<PAD>', '<UNK>']):
     return [word for word in sentence if word not in special_tokens]
 
 
@@ -57,7 +85,7 @@ if __name__ == '__main__':
     encoder = Encoder(len(vocab_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
     decoder = Decoder(len(vocab_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
     model = Seq2Seq(encoder, decoder)
-    model.load_state_dict(torch.load('models/model_seq2seq.pth')['model_state_dict'])
+    model.load_state_dict(torch.load('models/base-hyperion-1.1.pth',  map_location=torch.device('cpu'))['model_state_dict'])
     model.to(device)
     model.eval()
 
@@ -88,11 +116,7 @@ if __name__ == '__main__':
         #print(f'Predicted IDs shape',predicted_ids.shape)
 
         target_sentences = indices_to_word(trg, swedish_inverse_vocab)
-
         predicted_sentences = indices_to_word(predicted_ids, swedish_inverse_vocab)
-       
-
-       
 
         predictions.extend(predicted_sentences)
         targets.extend(target_sentences)

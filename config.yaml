@@ -3,7 +3,7 @@
 paths:
   file_en: 'sv-en/europarl-v7.sv-en.en'
   file_sv: 'sv-en/europarl-v7.sv-en.sv'
-  num_lines: 2000
+  num_lines: 50000
 
 logger:
   experiment_name: 'English_To_Swedish'
@@ -11,8 +11,8 @@ logger:
   entity: 'erdem'
 
 model_settings:
-  num_epochs: 15
-  learning_rate: 0.0005
+  num_epochs: 10
+  learning_rate: 0.005
   batch_size: 256
 
 

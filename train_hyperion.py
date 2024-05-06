@@ -99,7 +99,7 @@ def train_model(model, train_loader, val_loader, model_settings,index2word_sv):
     #Save  the model at the end
     torch.save({'epochs':epoch+1,'model_state_dict':model.state_dict(),
                 'optimizer_state_dict':optimizer.state_dict(),
-                'loss':loss.item()}, 'models/seq2seq_base2.1.pth')
+                'loss':loss.item()}, 'models/local_seq2seq.pth')
         
     print('Finished Training and saved the model')
     

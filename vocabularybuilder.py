@@ -29,10 +29,10 @@ def build_vocabulary(file_path, language_model, min_freq=2, max_vocab_size=1000,
 
     # Create a word-to-index dictionary and add special tokens first
     word_to_index = {
-        'PAD': 0, 
-        'SOS': 1,
-        'EOS': 2,
-        'UNK': 3
+        '<PAD>': 0, 
+        '<SOS>': 1,
+        '<EOS>': 2,
+        '<UNK>': 3
     }
 
     # Add other words starting indices from 4

@@ -11,7 +11,7 @@ from utils import parse_arguments, read_settings
 
 
 class TranslationDataset(Dataset):
-    MAX_LENGTH = 50  # Maximum length of the sentence
+    MAX_LENGTH = 10  # Maximum length of the sentence
 
     def __init__(self, file_en, file_sv, num_lines=30000):
         self.nlp_en = spacy.load('en_core_web_sm')
@@ -52,10 +52,22 @@ class TranslationDataset(Dataset):
             with open(vocab_path, 'rb') as file:
                 vocab = pickle.load(file)
                 #return pickle.load(file)
+
+                #Add special characters to 
+                special_words = ['PAD', 'SOS', 'EOS', 'UNK']
+                for word in special_words:
+                    if word in vocab:
+                        index = vocab[word]
+                        del vocab[word]
+                        vocab['<' + word + '>'] = index
+
+                return vocab
+
         else:
             raise FileNotFoundError(f"No vocabulary file found for {lang}.")
         
-        # Define special tokens with fixed indices      
+        ''''
+                                # Define special tokens with fixed indices      
         special_tokens = {
             '<PAD>': 0,
             '<SOS>': 1,
@@ -69,9 +81,20 @@ class TranslationDataset(Dataset):
 
         # Add words to the dictionary with their corresponding index
         for index, word in enumerate(vocab, start=start_index):
-            word2idx[word] = index
+            if word not in special_tokens:
+                word2idx[word] = index
 
         return word2idx
+        
+        
+        '''
+
+
+        
+        
+        
+        
+
         
     def open_data(self):
         # Reading the first n lines of the data
@@ -118,7 +141,14 @@ def main():
     dataset = TranslationDataset(**settings['paths'])
     
     #Print the 10th sentence pair
-    print(f"10th sentence pair: {dataset[11]}")
+    print(f"10th sentence pair: {dataset[14]}")
+    # Sort the dictionaries by values (indices)
+    sorted_word2idx_sv = dict(sorted(dataset.word2idx_sv.items(), key=lambda item: item[1]))
+    sorted_word2idx_en = dict(sorted(dataset.word2idx_en.items(), key=lambda item: item[1]))
+
+    # Print the first 10 words of sorted_word2idx_sv and sorted_word2idx_en
+    print(f"First 10 words of sorted_word2idx_sv: {list(sorted_word2idx_sv.items())[-10:]}")
+    print(f"First 10 words of sorted_word2idx_en: {list(sorted_word2idx_en.items())[-10:]}")
 
 if __name__ == '__main__':
 
