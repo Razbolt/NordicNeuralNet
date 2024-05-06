@@ -4,4 +4,5 @@ wandb/
 translation/
 models/
 oldcode/
-test_data/
+test_data/test_2.pt
+test_data/test.pt
