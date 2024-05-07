@@ -8,3 +8,6 @@ test_data/
 
 cleaned_combined_data.txt
 combined_data.txt
+
+m_translation.vocab
+m_translation.model
