@@ -16,6 +16,7 @@ with open('vocabulary_en.pkl', 'rb') as file:
 with open('vocabulary_sv.pkl', 'rb') as file:
     vocab_sv = pickle.load(file)
 
+'''
 special_tokens = ['<PAD>', '<SOS>', '<EOS>', '<UNK>']
 updated_vocab_en = {}
 updated_vocab_sv = {}
@@ -32,6 +33,9 @@ for word, index in vocab_sv.items():
 
 vocab_en = updated_vocab_en # Updating the vocabulary to have same number of tokens as the original
 vocab_sv = updated_vocab_sv 
+
+'''
+
 
 
 '''
@@ -82,16 +86,16 @@ if __name__ == '__main__':
     args = parse_arguments()
     settings = read_settings(args.config)
 
-    encoder = Encoder(len(vocab_en), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
-    decoder = Decoder(len(vocab_sv), embedding_size=256, hidden_size=512, num_layers=5, dropout=0.5)
+    encoder = Encoder(len(vocab_en), embedding_size=256, hidden_size=512, num_layers=4, dropout=0.4)
+    decoder = Decoder(len(vocab_sv), embedding_size=256, hidden_size=512, num_layers=4, dropout=0.4)
     model = Seq2Seq(encoder, decoder)
-    model.load_state_dict(torch.load('models/base-hyperion-1.1.pth',  map_location=torch.device('cpu'))['model_state_dict'])
+    model.load_state_dict(torch.load('models/base-hyperion-1.22.pth',  map_location=torch.device('cpu'))['model_state_dict'])
     model.to(device)
     model.eval()
 
 
 
-    test_data = torch.load('test_data/test.pt')
+    test_data = torch.load('test_data/test_2.pt')
     test_loader = DataLoader(test_data,settings['model_settings']['batch_size'], shuffle=False)
 
     english_inverse_volacb = build_inverse_vocab(vocab_en)
@@ -101,7 +105,7 @@ if __name__ == '__main__':
     targets = []
     for i, (source, target) in enumerate(test_loader):
         
-
+        print(source.max()) 
         #trg = target.unsqueeze(0)
         src = source.to(device)
         trg = target.to(device)
