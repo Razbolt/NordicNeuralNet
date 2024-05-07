@@ -9,5 +9,3 @@ test_data/
 combined_data.txt
 cleaned_combined_data.txt
 
-m_translation.vocab
-m_translation.model
