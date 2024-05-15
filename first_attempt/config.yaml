@@ -1,0 +1,17 @@
+# config.yaml
+
+paths:
+  file_en: 'sv-en/europarl-v7.sv-en.en'
+  file_sv: 'sv-en/europarl-v7.sv-en.sv'
+
+logger:
+  experiment_name: 'English_To_Swedish'
+  project: 'Translation'
+  entity: 'vitsiozo'
+
+model_settings:
+  num_epochs: 2
+  learning_rate: 0.001
+  batch_size: 64
+
+
