@@ -1,0 +1,14 @@
+# config.yaml
+sentence_paths:
+  file_en: 'data/english_1M_clean.txt'
+  file_sv: 'data/swedish_1M_clean.txt'
+
+logger:
+  experiment_name: 'translator_fineTune'
+  project: 'Machine Translation'
+  entity: 'team-razbolt'
+
+model_settings:
+  num_epochs: 10
+  learning_rate: 0.0005
+  batch_size: 128
