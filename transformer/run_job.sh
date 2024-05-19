@@ -18,7 +18,7 @@ source /opt/flight/etc/setup.sh
 flight env activate gridware
 module load libs/nvidia-cuda/11.2.0/bin
 module load gnu
-export WANDB_API_KEY=0a16fe8fc1204885e468ee1293459c5ffabc344e
+export WANDB_API_KEY=
 
 echo $WANDB_API_KEY
 

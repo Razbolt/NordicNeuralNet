@@ -4,7 +4,7 @@ sentence_paths:
   file_sv: 'data/swedish_100k_clean.txt'
 
 logger:
-  experiment_name: 'Transf1_100k'
+  experiment_name: 'translation'
   project: 'Machine Translation'
   entity: 'team-razbolt'
 
