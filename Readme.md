@@ -2,6 +2,9 @@
 
 This project contains a neural network for machine translation between English and Swedish.
 
+Please also check our other github repository. We train on models on other repository first and push it to here in a cleaner version.
+https://github.com/Razbolt/nmt-small
+
 ## Description
 
 The Nordic Neural Net project aims to develop a machine translation system that can accurately translate text between English and Swedish. The neural network model used in this project is designed to handle the complexities of language translation and provide high-quality translations.
